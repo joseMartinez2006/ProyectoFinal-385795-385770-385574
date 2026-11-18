@@ -1,0 +1,39 @@
+// ==========================================
+// PROYECTO FINAL - BLOG MANAGER
+// CONFIGURACION DE LA BASE DE DATOS
+// ==========================================
+
+
+// 1. RESTRICCIONES PARA USUARIOS
+
+CREATE CONSTRAINT user_email_unique IF NOT EXISTS
+FOR (u:User)
+REQUIRE u.email IS UNIQUE;
+
+
+// 2. RESTRICCIONES PARA ARTICULOS
+
+CREATE CONSTRAINT article_id_unique IF NOT EXISTS
+FOR (a:Article)
+REQUIRE a.id IS UNIQUE;
+
+
+// 3. RESTRICCIONES PARA COMENTARIOS
+
+CREATE CONSTRAINT comment_id_unique IF NOT EXISTS
+FOR (c:Comment)
+REQUIRE c.id IS UNIQUE;
+
+
+// 4. RESTRICCIONES PARA ETIQUETAS
+
+CREATE CONSTRAINT tag_name_unique IF NOT EXISTS
+FOR (t:Tag)
+REQUIRE t.name IS UNIQUE;
+
+
+// 5. RESTRICCIONES PARA CATEGORIAS
+
+CREATE CONSTRAINT category_name_unique IF NOT EXISTS
+FOR (c:Category)
+REQUIRE c.name IS UNIQUE;
