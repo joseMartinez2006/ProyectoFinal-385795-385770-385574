@@ -399,8 +399,8 @@ def create_sample_data():
                 ("Innovacion", "https://example.com/innovacion")
             ],
             "comments": [
-                ("Ana", "https://example.com/ana"),
-                ("Carlos", "https://example.com/carlos")
+                "Este articulo me parecio muy interesante.",
+                "Me gustaria conocer mas sobre este tema."
             ]
         },
         {
@@ -412,8 +412,8 @@ def create_sample_data():
                 ("Privacidad", "https://example.com/privacidad")
             ],
             "comments": [
-                ("Luis", "https://example.com/luis"),
-                ("Maria", "https://example.com/maria")
+                "Este articulo me parecio muy interesante.",
+                "Me gustaria conocer mas sobre este tema."
             ]
         },
         {
@@ -425,8 +425,8 @@ def create_sample_data():
                 ("Innovacion", "https://example.com/innovacion")
             ],
             "comments": [
-                ("Sofia", "https://example.com/sofia"),
-                ("Pedro", "https://example.com/pedro")
+                "Este articulo me parecio muy interesante.",
+                "Me gustaria conocer mas sobre este tema."
             ]
         }
     ]
@@ -454,14 +454,14 @@ def create_sample_data():
         if not article_id:
             continue
 
-        for name, url in sample["comments"]:
+        for content in sample["comments"]:
             existing_comments = get_comments(article_id)
 
-            if not any(c["content"] == name for c in existing_comments):
+            if not any(c["content"] == content for c in existing_comments):
                 create_comment(
                     user_email,
                     article_id,
-                    f"Comentario de {name} sobre este articulo."
+                    content
                 )
 
         for name, url in sample["tags"]:
