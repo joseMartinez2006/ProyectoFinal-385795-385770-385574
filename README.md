@@ -33,8 +33,6 @@ ProyectoFinal-385795-385770-385574/
 ├── cypher/
 │   └── blog.cypher
 │
-├── screenshots/
-│
 ├── requirements.txt
 ├── .env.example
 ├── .gitignore
