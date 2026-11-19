@@ -407,6 +407,7 @@ class BlogApp:
 
     # COMENTARIOS
 
+    
     def show_comments(self):
         selection = self.article_list.curselection()
 
@@ -421,7 +422,7 @@ class BlogApp:
 
         window = tk.Toplevel(self.root)
         window.title("Comentarios")
-        window.geometry("600x450")
+        window.geometry("600x500")
 
         tk.Label(
             window,
@@ -429,49 +430,80 @@ class BlogApp:
             font=("Arial", 14, "bold")
         ).pack(pady=10)
 
-        comment_list = tk.Listbox(window, width=70, height=12)
+        comment_list = tk.Listbox(
+            window,
+            width=75,
+            height=12
+        )
         comment_list.pack(pady=10)
 
-        comments = get_comments(article["id"])
+        comments = []
 
-        for comment in comments:
-            comment_list.insert(tk.END, comment["name"])
+        def refresh_comments():
+            nonlocal comments
+
+            comment_list.delete(0, tk.END)
+            comments = get_comments(article["id"])
+
+            for comment in comments:
+                comment_list.insert(
+                    tk.END,
+                    f"{comment['author']}: {comment['content']}"
+                )
 
         def add_comment():
-            name = simpledialog.askstring(
-                "Nuevo comentario",
-                "Nombre del comentarista:",
-                parent=window
+            comment_window = tk.Toplevel(window)
+            comment_window.title("Agregar comentario")
+            comment_window.geometry("400x300")
+
+            tk.Label(
+                comment_window,
+                text="Escribe tu comentario:"
+            ).pack(pady=10)
+
+            content_text = tk.Text(
+                comment_window,
+                width=42,
+                height=9
             )
+            content_text.pack(padx=10, pady=5)
 
-            if not name:
-                return
+            def save_comment():
+                content = content_text.get(
+                    "1.0", tk.END
+                ).strip()
 
-            url = simpledialog.askstring(
-                "Nuevo comentario",
-                "URL del comentarista:",
-                parent=window
-            )
+                if not content:
+                    messagebox.showwarning(
+                        "Datos incompletos",
+                        "Escribe el contenido del comentario."
+                    )
+                    return
 
-            if not url:
-                return
-
-            comment_id = create_comment(
-                self.user["email"],
-                article["id"],
-                name,
-                url
-            )
-
-            if comment_id:
-                messagebox.showinfo("Exito", "Comentario agregado.")
-                window.destroy()
-                self.show_comments_for_article(article)
-            else:
-                messagebox.showerror(
-                    "Error",
-                    "No se pudo agregar el comentario."
+                comment_id = create_comment(
+                    self.user["email"],
+                    article["id"],
+                    content
                 )
+
+                if comment_id:
+                    messagebox.showinfo(
+                        "Exito",
+                        "Comentario agregado correctamente."
+                    )
+                    comment_window.destroy()
+                    refresh_comments()
+                else:
+                    messagebox.showerror(
+                        "Error",
+                        "No se pudo agregar el comentario."
+                    )
+
+            tk.Button(
+                comment_window,
+                text="Guardar comentario",
+                command=save_comment
+            ).pack(pady=10)
 
         def edit_comment():
             selected = comment_list.curselection()
@@ -485,43 +517,60 @@ class BlogApp:
 
             comment = comments[selected[0]]
 
-            name = simpledialog.askstring(
-                "Modificar comentario",
-                "Nuevo nombre:",
-                initialvalue=comment["name"],
-                parent=window
+            comment_window = tk.Toplevel(window)
+            comment_window.title("Modificar comentario")
+            comment_window.geometry("400x300")
+
+            tk.Label(
+                comment_window,
+                text="Modifica tu comentario:"
+            ).pack(pady=10)
+
+            content_text = tk.Text(
+                comment_window,
+                width=42,
+                height=9
             )
+            content_text.pack(padx=10, pady=5)
+            content_text.insert("1.0", comment["content"])
 
-            if not name:
-                return
+            def save_changes():
+                content = content_text.get(
+                    "1.0", tk.END
+                ).strip()
 
-            url = simpledialog.askstring(
-                "Modificar comentario",
-                "Nueva URL:",
-                initialvalue=comment["url"],
-                parent=window
-            )
+                if not content:
+                    messagebox.showwarning(
+                        "Datos incompletos",
+                        "El comentario no puede estar vacio."
+                    )
+                    return
 
-            if not url:
-                return
-
-            success = update_comment(
-                comment["id"],
-                name,
-                url,
-                self.user["email"],
-                self.user["role"]
-            )
-
-            if success:
-                messagebox.showinfo("Exito", "Comentario actualizado.")
-                window.destroy()
-                self.show_comments_for_article(article)
-            else:
-                messagebox.showerror(
-                    "Error",
-                    "No tienes permiso para modificar este comentario."
+                success = update_comment(
+                    comment["id"],
+                    content,
+                    self.user["email"],
+                    self.user["role"]
                 )
+
+                if success:
+                    messagebox.showinfo(
+                        "Exito",
+                        "Comentario actualizado."
+                    )
+                    comment_window.destroy()
+                    refresh_comments()
+                else:
+                    messagebox.showerror(
+                        "Error",
+                        "No tienes permiso para modificar este comentario."
+                    )
+
+            tk.Button(
+                comment_window,
+                text="Guardar cambios",
+                command=save_changes
+            ).pack(pady=10)
 
         def remove_comment():
             selected = comment_list.curselection()
@@ -550,18 +599,36 @@ class BlogApp:
             )
 
             if success:
-                messagebox.showinfo("Exito", "Comentario eliminado.")
-                window.destroy()
-                self.show_comments_for_article(article)
+                messagebox.showinfo(
+                    "Exito",
+                    "Comentario eliminado."
+                )
+                refresh_comments()
             else:
                 messagebox.showerror(
                     "Error",
                     "No tienes permiso para eliminar este comentario."
                 )
 
-        tk.Button(window, text="Agregar", command=add_comment).pack(pady=3)
-        tk.Button(window, text="Modificar", command=edit_comment).pack(pady=3)
-        tk.Button(window, text="Eliminar", command=remove_comment).pack(pady=3)
+        tk.Button(
+            window,
+            text="Agregar comentario",
+            command=add_comment
+        ).pack(pady=3)
+
+        tk.Button(
+            window,
+            text="Modificar comentario",
+            command=edit_comment
+        ).pack(pady=3)
+
+        tk.Button(
+            window,
+            text="Eliminar comentario",
+            command=remove_comment
+        ).pack(pady=3)
+
+        refresh_comments()
 
     def show_comments_for_article(self, article):
         self.article_list.selection_clear(0, tk.END)

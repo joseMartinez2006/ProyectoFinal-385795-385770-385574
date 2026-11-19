@@ -110,7 +110,7 @@ def delete_article(article_id, user_email, role):
 
 # COMENTARIOS
 
-def create_comment(user_email, article_id, name, url):
+def create_comment(user_email, article_id, content):
     db = Database()
 
     try:
@@ -120,8 +120,7 @@ def create_comment(user_email, article_id, name, url):
                 MATCH (a:Article {id: $article_id})
                 CREATE (c:Comment {
                     id: $id,
-                    name: $name,
-                    url: $url
+                    content: $content
                 })
                 CREATE (u)-[:WROTE]->(c)
                 CREATE (a)-[:HAS_COMMENT]->(c)
@@ -130,8 +129,7 @@ def create_comment(user_email, article_id, name, url):
                 email=user_email,
                 article_id=article_id,
                 id=str(uuid.uuid4()),
-                name=name,
-                url=url
+                content=content
             )
 
             record = result.single()
@@ -148,9 +146,10 @@ def get_comments(article_id):
         with db.driver.session() as session:
             result = session.run("""
                 MATCH (a:Article {id: $id})-[:HAS_COMMENT]->(c:Comment)
+                OPTIONAL MATCH (u:User)-[:WROTE]->(c)
                 RETURN c.id AS id,
-                       c.name AS name,
-                       c.url AS url
+                       coalesce(c.content, c.name) AS content,
+                       coalesce(u.name, u.email, 'Usuario') AS author
             """, id=article_id)
 
             return [dict(record) for record in result]
@@ -159,8 +158,7 @@ def get_comments(article_id):
         db.close()
 
 
-
-def update_comment(comment_id, name, url, user_email, role):
+def update_comment(comment_id, content, user_email, role):
     db = Database()
 
     try:
@@ -172,13 +170,12 @@ def update_comment(comment_id, name, url, user_email, role):
                    OR EXISTS {
                        MATCH (u)-[:WROTE]->(c)
                    }
-                SET c.name = $name,
-                    c.url = $url
+                SET c.content = $content
+                REMOVE c.name, c.url
                 RETURN c.id AS id
             """,
                 id=comment_id,
-                name=name,
-                url=url,
+                content=content,
                 email=user_email,
                 role=role
             )
@@ -460,8 +457,12 @@ def create_sample_data():
         for name, url in sample["comments"]:
             existing_comments = get_comments(article_id)
 
-            if not any(c["name"] == name for c in existing_comments):
-                create_comment(user_email, article_id, name, url)
+            if not any(c["content"] == name for c in existing_comments):
+                create_comment(
+                    user_email,
+                    article_id,
+                    f"Comentario de {name} sobre este articulo."
+                )
 
         for name, url in sample["tags"]:
             existing_tags = get_tags(article_id)
